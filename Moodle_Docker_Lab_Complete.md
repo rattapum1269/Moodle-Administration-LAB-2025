@@ -41,26 +41,8 @@
 - **Fast Deployment** - เริ่มต้นและหยุดได้รวดเร็ว
 
 #### 2.1.2 Container vs Virtual Machine
+![Virtual Machine and Container](images/vs_container.png)
 
-```
-┌─────────────────────────────────────┐  ┌─────────────────────────────────────┐
-│       Virtual Machine               │  │           Container                 │
-├─────────────────────────────────────┤  ├─────────────────────────────────────┤
-│   App A   │   App B   │   App C     │  │   App A   │   App B   │   App C     │
-├───────────┼───────────┼─────────────┤  ├───────────┼───────────┼─────────────┤
-│  Bins/    │  Bins/    │  Bins/      │  │  Bins/    │  Bins/    │  Bins/      │
-│  Libs     │  Libs     │  Libs       │  │  Libs     │  Libs     │  Libs       │
-├───────────┼───────────┼─────────────┤  ├─────────────────────────────────────┤
-│ Guest OS  │ Guest OS  │ Guest OS    │  │        Docker Engine                │
-├───────────┴───────────┴─────────────┤  ├─────────────────────────────────────┤
-│         Hypervisor                  │  │        Host OS                      │
-├─────────────────────────────────────┤  ├─────────────────────────────────────┤
-│         Host OS                     │  │        Infrastructure               │
-├─────────────────────────────────────┤  └─────────────────────────────────────┘
-│         Infrastructure              │
-└─────────────────────────────────────┘
-     ขนาดใหญ่ เริ่มต้นช้า                   ขนาดเล็ก เริ่มต้นเร็ว
-```
 
 #### 2.1.3 Docker Components
 
@@ -144,38 +126,7 @@ Container A (moodle_app)  --[Bridge Network]--> Container B (moodle_db)
 ![Moodle System Architecture](images/moodle_architecture.png)
 
 
-#### 2.5.3 Moodle Data Flow
-
-```
-User Request
-     │
-     ▼
-┌─────────────┐
-│ Web Browser │
-└──────┬──────┘
-       │ HTTP Request
-       ▼
-┌─────────────────┐
-│  Web Server     │ (Apache/Nginx on port 80)
-│  (Container 1)  │
-└────────┬────────┘
-         │
-         ▼
-    ┌────────────────────┐
-    │  PHP Processor     │
-    │  Moodle Core       │
-    └────┬───────────┬───┘
-         │           │
-         ▼           ▼
-    ┌────────┐  ┌──────────┐
-    │Database│  │File Store│
-    │MariaDB │  │ Volume   │
-    │(Cont 2)│  │(moodle   │
-    └────────┘  │ data)    │
-                └──────────┘
-```
-
-### 2.6 ระบบที่ใช้ในการทดลอง: lthub/moodle
+### 2.5 ระบบที่ใช้ในการทดลอง: lthub/moodle
 
 **lthub/moodle** เป็น Docker Image ที่สร้างขึ้นโดยมหาวิทยาลัย University of British Columbia (UBC) สำหรับใช้ใน Production
 
@@ -203,92 +154,11 @@ User Request
 ![System Architecture](images/architecture3.png)
 
 
-### 3.2 Data Flow และการสื่อสาร
-
-#### 3.2.1 User Request Flow
-
-```
-1. User Access
-   Browser → http://localhost
-              │
-              ▼
-2. Port Forwarding
-   Host:80 → Container moodle_app:80
-              │
-              ▼
-3. Web Server Processing
-   Apache receives request
-              │
-              ▼
-4. PHP Processing
-   PHP-FPM processes Moodle code
-              │
-              ├─────────────────────┐
-              ▼                     ▼
-5a. Database Query        5b. File Access
-   MySQL Query to db:3306    Read/Write to /moodledata
-              │                     │
-              ▼                     ▼
-6a. MariaDB Container     6b. Docker Volume
-   Execute query             moodledata volume
-   Return data               Return file
-              │                     │
-              └─────────┬───────────┘
-                        ▼
-7. Response Generation
-   PHP generates HTML/JSON
-              │
-              ▼
-8. Send Response
-   Apache → Browser
-```
-
-#### 3.2.2 Container Communication
-
-```
-┌────────────────────────────────────────────────────────┐
-│              Container Networking                      │
-├────────────────────────────────────────────────────────┤
-│                                                        │
-│  moodle_app Container                                  │
-│  ┌─────────────────────────────────────┐               │
-│  │ Environment Variables:              │               │
-│  │ MOODLE_DB_HOST=db        ─────┐     │               │
-│  │ MOODLE_DB_PORT=3306           │     │               │
-│  │ MOODLE_DB_NAME=moodle         │     │               │
-│  │ MOODLE_DB_USER=moodleuser     │     │               │
-│  │ MOODLE_DB_PASSWORD=***        │     │               │
-│  └───────────────────────────────┘     │               │
-│                                        │               │
-│              DNS Resolution            │               │
-│              db → 172.18.0.2           │               │
-│                        │               │               │
-│                        ▼               ▼               │
-│  ┌──────────────────────────────────────────────┐      │
-│  │     Bridge Network (moodle_network)          │      │
-│  │                                              │      │
-│  │  172.18.0.3 ◄──────────────► 172.18.0.2      │      │
-│  │  (moodle)                      (db)          │      │
-│  └──────────────────────────────────────────────┘      │
-│                                        │               │
-│                                        ▼               │
-│  moodle_db Container                                   │
-│  ┌─────────────────────────────────────┐               │
-│  │ Listening on:                       │               │
-│  │ 0.0.0.0:3306 (All interfaces)       │               │
-│  │                                     │               │
-│  │ Accepts connections from:           │               │
-│  │ - Same network containers           │               │
-│  │ - NOT from external (no port map)   │               │
-│  └─────────────────────────────────────┘               │
-└────────────────────────────────────────────────────────┘
-```
-
-### 3.3 Volume และ Data Persistence
+### 3.2 Volume และ Data Persistence
 ![Volume and Data Persistence](images/volumedata.jpg)
 
 
-### 3.4 Component Interaction Matrix
+### 3.3 Component Interaction Matrix
 
 | From Component | To Component | Protocol | Port | Purpose |
 |----------------|--------------|----------|------|---------|
