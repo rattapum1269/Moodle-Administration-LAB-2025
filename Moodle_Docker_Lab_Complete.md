@@ -606,9 +606,8 @@ h1 {
 - Favicon: 32x32 px (ICO/PNG)
 
 **บันทึกผลการทดลอง 6-1:**
-```bash
- รูป ผลการปรับแต่ง Theme
-```
+![Uploading image.png…]()
+
 ---
 
 ### 6.2 การจัดการ Course Categories และ Courses
