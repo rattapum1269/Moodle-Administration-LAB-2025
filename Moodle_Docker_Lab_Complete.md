@@ -606,7 +606,8 @@ h1 {
 - Favicon: 32x32 px (ICO/PNG)
 
 **บันทึกผลการทดลอง 6-1:**
-![Uploading image.png…]()
+<img width="1907" height="906" alt="image" src="https://github.com/user-attachments/assets/475872f2-194b-450b-9d94-e8667547e6d9" />
+
 
 ---
 
